@@ -1,12 +1,12 @@
 import os
+import requests
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pymongo import MongoClient
 from fastapi.openapi.utils import get_openapi
 from bson import ObjectId
-
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -36,6 +36,18 @@ class Product(BaseModel):
     name: str
     price: float
     quantity: int
+
+# Use Docker service names instead of localhost
+INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL", "http://payment-service:8000")
+
+@app.get("/")
+def read_root():
+    return {"message": "Inventory Service Running!"}
+
+@app.get("/check-payment")
+def check_payment():
+    response = requests.get(f"{INVENTORY_SERVICE_URL}/status")
+    return response.json()
 
 @app.get("/health")
 def health_check():

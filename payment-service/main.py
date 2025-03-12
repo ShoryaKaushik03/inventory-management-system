@@ -1,4 +1,6 @@
 import os
+import logging
+import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -6,7 +8,6 @@ from pydantic import BaseModel
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from bson import ObjectId
-import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,6 +46,18 @@ class Order(BaseModel):
     total: float
     quantity: int
     status: str  # pending, completed, refunded
+
+# Use Docker service names instead of localhost
+PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:8000")
+
+@app.get("/")
+def read_root():
+    return {"message": "Inventory Service Running!"}
+
+@app.get("/check-payment")
+def check_payment():
+    response = requests.get(f"{PAYMENT_SERVICE_URL}/status")
+    return response.json()
 
 @app.get("/health", tags=["System"], summary="Health Check", description="Checks the health status of the MongoDB connection.")
 def health_check():
